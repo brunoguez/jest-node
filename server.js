@@ -31,9 +31,6 @@ app.get("/pedidos/:id", getPedidosById);
 app.post("/pedidos", createPedido);
 app.get("/usuarios/maisPedidos", usuarioMaisPedidos);
 app.get("/usuariosByValor", usuarioByValor);
-// app.get("/usuariosByValor", (req, res) => {
-//     console.log(1)
-// });
 
 if (process.env.NODE_ENV !== "test") {
     sequelize.sync().then(() => {
@@ -41,4 +38,4 @@ if (process.env.NODE_ENV !== "test") {
     });
 }
 
-export default app; // Para os testes com Jest
+export default app;
