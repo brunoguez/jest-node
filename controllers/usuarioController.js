@@ -1,3 +1,4 @@
+import { Sequelize } from "sequelize";
 import sequelize from "../config/database.js";
 import Usuario from "../models/Usuario.js";
 
@@ -37,6 +38,31 @@ export const usuarioMaisPedidos = async (req, res) => {
     } catch (error) {
         console.error("Erro ao buscar usuário com mais pedidos:", error);
         res.status(500).json({ error: "Erro ao buscar usuário com mais pedidos" });
+    }
+};
+
+export const usuarioByValor = async (req, res) => {
+    try {
+        let { v: valorMinimo } = req.query;
+        try{
+            valorMinimo = parseFloat(valorMinimo);
+        } catch {
+            valorMinimo = 0;
+        }
+
+        const [resultado] = await sequelize.query(`
+            SELECT u.id_usuario, u.nome, IFNULL(SUM(p.valor), 0) AS total_pedidos
+            FROM Usuarios u
+            LEFT JOIN Pedidos p ON u.id_usuario = p.fk_Usuario
+            GROUP BY u.id_usuario, u.nome
+            HAVING IFNULL(SUM(p.valor), 0) > ${valorMinimo}
+        `);
+        if (!resultado.length) return res.status(404).json({ error: "Nenhum pedido encontrado" });
+
+        res.json(resultado);
+    } catch (error) {
+        console.error("Erro:", error);
+        res.status(500).json({ error: "Erro" });
     }
 };
 

@@ -7,7 +7,8 @@ import {
     update,
     deleteUsuario,
     countAll,
-    usuarioMaisPedidos
+    usuarioMaisPedidos,
+    usuarioByValor
 } from "./controllers/usuarioController.js";
 import {
     getPedidos,
@@ -29,6 +30,10 @@ app.get("/pedidos", getPedidos);
 app.get("/pedidos/:id", getPedidosById);
 app.post("/pedidos", createPedido);
 app.get("/usuarios/maisPedidos", usuarioMaisPedidos);
+app.get("/usuariosByValor", usuarioByValor);
+// app.get("/usuariosByValor", (req, res) => {
+//     console.log(1)
+// });
 
 if (process.env.NODE_ENV !== "test") {
     sequelize.sync().then(() => {

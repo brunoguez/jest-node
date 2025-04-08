@@ -106,8 +106,10 @@ describe("Testando API de Usuários", () => {
             request(app).get("/pedidos")
         ]);
 
-        const groupPedidos = Object.groupBy(reqTodosPedidos.body, ({ fk_Usuario }) => fk_Usuario);
-        const usersPedidos = Object.entries(groupPedidos)
+        const groupPedidosByUser = {};
+        reqTodosPedidos.body.forEach(element => groupPedidosByUser[element.fk_Usuario] = [...(groupPedidosByUser[element.fk_Usuario] ?? []), element]);
+
+        const usersPedidos = Object.entries(groupPedidosByUser)
             .map(([id_usuario, qt]) => ({ id_usuario, qt: qt.length }))
             .sort((a, b) => b.qt - a.qt);
         const userMaisPedidos = usersPedidos[0];
@@ -116,10 +118,36 @@ describe("Testando API de Usuários", () => {
     });
 
     test("10 - Usuários que gastaram a mais de um valor ou array vazio quando ninguém atende", async () => {
-        const valorCorte = 10;
+        const valorCorte = 170;
         const [resUserMaisPedidos, reqTodosPedidos] = await Promise.all([
-            request(app).get("/pedidos?valorCorte=" + valorCorte),
+            request(app).get(`/usuariosByValor?v=${valorCorte}`),
             request(app).get("/pedidos")
         ]);
+
+        const mapReqTodosPedidos = reqTodosPedidos.body.map(pedido => ({
+            id_usuario: pedido.fk_Usuario,
+            valor: pedido.valor
+        }));
+
+
+        const reduceReqTodosPedidos = mapReqTodosPedidos.reduce((previous, current) => {
+            previous[current.id_usuario] = (previous[current.id_usuario] ?? 0) + current.valor;
+            return previous;
+        }, {});
+
+        const todosPedidos = Object.entries(reduceReqTodosPedidos)
+            .map(item => ({ id_usuario: item[0], total_pedidos: item[1] }))
+            .filter(item => item.total_pedidos > valorCorte)
+            .sort((item1, item2) => item1.valor !== item2.valor ?  item2.valor - item1.valor : item1.id_usuario - item2.id_usuario);
+
+        const usersMaisPedidos = resUserMaisPedidos.body
+            .sort((item1, item2) => item1.valor !== item2.valor ?  item2.valor - item1.valor : item1.id_usuario - item2.id_usuario);
+
+        expect(usersMaisPedidos.length == todosPedidos.length).toBe(true);
+
+        for (let i = 0; i < todosPedidos.length; i++) {
+            expect(String(usersMaisPedidos[i]?.id_usuario)).toBe(String(todosPedidos[i]?.id_usuario));
+            expect(String(usersMaisPedidos[i]?.total_pedidos)).toBe(String(todosPedidos[i]?.total_pedidos));
+        }
     });
 });
